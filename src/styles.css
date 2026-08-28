@@ -147,7 +147,9 @@
   display: none;
   flex-direction: column;
   overflow: hidden;
+  overflow-x: clip;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   background: var(--rcw-bg);
   border: 1px solid var(--rcw-border);
   border-radius: var(--rcw-radius);
@@ -495,6 +497,10 @@
 .rcw[data-mobile="true"] .rcw-fab {
   min-height: 52px;
   padding: 0 14px;
+}
+
+.rcw[data-mobile="true"] .rcw-input {
+  font-size: 16px;
 }
 
 .rcw[data-mobile="true"] .rcw-header {

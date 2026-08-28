@@ -55,7 +55,9 @@ export class Widget {
   private scrollLock: {
     y: number;
     htmlOverflow: string;
+    htmlOverflowX: string;
     bodyOverflow: string;
+    bodyOverflowX: string;
     bodyPosition: string;
     bodyTop: string;
     bodyLeft: string;
@@ -534,15 +536,23 @@ export class Widget {
   private updateMobile(): void {
     const root = this.root();
     if (!root) return;
-    const mobile = window.innerWidth <= this.config.mobileBreakpoint;
-    root.dataset.mobile = String(mobile);
+    root.dataset.mobile = String(this.isMobileLayout());
     if (this.store.get().isOpen) this.lockScrollIfNeeded();
     else this.unlockScroll();
-    this.syncViewportHeight();
+    this.syncViewportBox();
+  }
+
+  private viewportWidth(): number {
+    const visual = window.visualViewport?.width;
+    return Math.min(window.innerWidth, Math.round(visual ?? window.innerWidth));
+  }
+
+  private isMobileLayout(): boolean {
+    return this.viewportWidth() <= this.config.mobileBreakpoint;
   }
 
   private isMobileOpen(): boolean {
-    return window.innerWidth <= this.config.mobileBreakpoint && this.store.get().isOpen;
+    return this.isMobileLayout() && this.store.get().isOpen;
   }
 
   private lockScrollIfNeeded(): void {
@@ -557,7 +567,9 @@ export class Widget {
     this.scrollLock = {
       y: window.scrollY,
       htmlOverflow: html.style.overflow,
+      htmlOverflowX: html.style.overflowX,
       bodyOverflow: body.style.overflow,
+      bodyOverflowX: body.style.overflowX,
       bodyPosition: body.style.position,
       bodyTop: body.style.top,
       bodyLeft: body.style.left,
@@ -565,7 +577,9 @@ export class Widget {
       bodyWidth: body.style.width,
     };
     html.style.overflow = "hidden";
+    html.style.overflowX = "hidden";
     body.style.overflow = "hidden";
+    body.style.overflowX = "hidden";
     body.style.position = "fixed";
     body.style.top = `-${this.scrollLock.y}px`;
     body.style.left = "0";
@@ -574,7 +588,7 @@ export class Widget {
   }
 
   private unlockScroll(): void {
-    this.clearViewportHeight();
+    this.clearViewportBox();
     const saved = this.scrollLock;
     this.scrollLock = null;
     if (!saved) return;
@@ -582,7 +596,9 @@ export class Widget {
     const html = document.documentElement;
     const body = document.body;
     html.style.overflow = saved.htmlOverflow;
+    html.style.overflowX = saved.htmlOverflowX;
     body.style.overflow = saved.bodyOverflow;
+    body.style.overflowX = saved.bodyOverflowX;
     body.style.position = saved.bodyPosition;
     body.style.top = saved.bodyTop;
     body.style.left = saved.bodyLeft;
@@ -594,7 +610,7 @@ export class Widget {
   private bindViewport(): void {
     this.unbindViewport();
     const viewport = window.visualViewport;
-    const onChange = () => this.syncViewportHeight();
+    const onChange = () => this.syncViewportBox();
     viewport?.addEventListener("resize", onChange);
     viewport?.addEventListener("scroll", onChange);
     this.removeViewport = () => {
@@ -608,28 +624,40 @@ export class Widget {
     this.removeViewport = undefined;
   }
 
-  private syncViewportHeight(): void {
+  private syncViewportBox(): void {
     const panel = this.shadow?.querySelector<HTMLElement>(".rcw-panel");
     if (!panel) return;
     if (!this.isMobileOpen()) {
-      this.clearViewportHeight();
+      this.clearViewportBox();
       return;
     }
     const viewport = window.visualViewport;
+    const left = Math.round(viewport?.offsetLeft ?? 0);
+    const top = Math.round(viewport?.offsetTop ?? 0);
+    const width = Math.round(viewport?.width ?? window.innerWidth);
     const height = Math.round(viewport?.height ?? window.innerHeight);
-    const offsetTop = Math.round(viewport?.offsetTop ?? 0);
-    panel.style.top = `${offsetTop}px`;
+    panel.style.position = "fixed";
+    panel.style.left = `${left}px`;
+    panel.style.top = `${top}px`;
+    panel.style.width = `${width}px`;
     panel.style.height = `${height}px`;
+    panel.style.maxWidth = "none";
     panel.style.maxHeight = `${height}px`;
+    panel.style.right = "auto";
     panel.style.bottom = "auto";
   }
 
-  private clearViewportHeight(): void {
+  private clearViewportBox(): void {
     const panel = this.shadow?.querySelector<HTMLElement>(".rcw-panel");
     if (!panel) return;
+    panel.style.position = "";
+    panel.style.left = "";
     panel.style.top = "";
+    panel.style.width = "";
     panel.style.height = "";
+    panel.style.maxWidth = "";
     panel.style.maxHeight = "";
+    panel.style.right = "";
     panel.style.bottom = "";
   }
 

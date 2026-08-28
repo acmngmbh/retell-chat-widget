@@ -26,6 +26,12 @@ Script auf jeder Seite einfügen (am Ende von `<body>` oder in `<head>`):
 
 Danach erscheint unten rechts der Button. Ein Klick öffnet den Chat.
 
+Die Einbindeseite braucht ein Viewport-Meta, sonst rechnet iOS mit ~980px Breite und der Chat scrollt horizontal:
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
 ## 3. Button-Text und Design
 
 | Attribut | JS-Option | Bedeutung |
@@ -113,7 +119,7 @@ Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
 ## Verhalten
 
 - **Navigation:** Verlauf und Offen-Zustand bleiben über Seitenwechsel erhalten (`localStorage`).
-- **Mobile:** Unter 640px öffnet der Chat fullscreen.
+- **Mobile:** Unter 640px öffnet der Chat fullscreen. Host-Seite muss `width=device-width` setzen.
 - **reCAPTCHA:** Wenn am Public Key aktiv, Google-Script einbinden und `data-recaptcha-key` setzen.
 
 ## Lokal testen
