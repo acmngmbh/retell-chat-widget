@@ -2,6 +2,11 @@
   all: initial;
 }
 
+.rcw,
+.rcw * {
+  box-sizing: border-box;
+}
+
 .rcw {
   --rcw-primary: #2563eb;
   --rcw-primary-ink: #ffffff;
@@ -71,6 +76,7 @@
 
 .rcw-fab {
   min-height: 56px;
+  max-width: calc(100% - 2 * var(--rcw-offset-x));
   padding: 0 18px 0 16px;
   border-radius: 999px;
 }
@@ -105,6 +111,10 @@
 
 .rcw-fab-label {
   font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rcw-badge {
@@ -137,6 +147,7 @@
   display: none;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior: contain;
   background: var(--rcw-bg);
   border: 1px solid var(--rcw-border);
   border-radius: var(--rcw-radius);
@@ -154,6 +165,7 @@
   padding: 14px 14px 14px 16px;
   border-bottom: 1px solid var(--rcw-border);
   background: var(--rcw-bg);
+  flex-shrink: 0;
 }
 
 .rcw-brand {
@@ -241,7 +253,12 @@
 
 .rcw-messages {
   flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -262,6 +279,7 @@
   gap: 8px;
   align-items: flex-end;
   max-width: 92%;
+  min-width: 0;
 }
 
 .rcw-row-user {
@@ -383,6 +401,8 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 0 16px 10px;
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .rcw-chip {
@@ -409,10 +429,13 @@
   padding: 12px;
   border-top: 1px solid var(--rcw-border);
   background: var(--rcw-bg);
+  flex-shrink: 0;
+  min-width: 0;
 }
 
 .rcw-input {
   flex: 1;
+  min-width: 0;
   min-height: 44px;
   max-height: 120px;
   resize: none;
@@ -454,11 +477,17 @@
   fill: currentColor;
 }
 
-.rcw[data-mobile="true"][data-open="true"] .rcw-panel {
-  inset: 0;
-  width: 100vw;
-  height: 100dvh;
-  max-height: 100dvh;
+.rcw[data-mobile="true"][data-open="true"] .rcw-panel,
+.rcw[data-mobile="true"][data-open="true"][data-position="bottom-right"] .rcw-panel,
+.rcw[data-mobile="true"][data-open="true"][data-position="bottom-left"] .rcw-panel {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: none;
   border-radius: 0;
   border: 0;
 }

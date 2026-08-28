@@ -51,6 +51,17 @@ export class Widget {
   private removeTrigger?: () => void;
   private removeKeydown?: () => void;
   private removeResize?: () => void;
+  private removeViewport?: () => void;
+  private scrollLock: {
+    y: number;
+    htmlOverflow: string;
+    bodyOverflow: string;
+    bodyPosition: string;
+    bodyTop: string;
+    bodyLeft: string;
+    bodyRight: string;
+    bodyWidth: string;
+  } | null = null;
 
   constructor(config: WidgetConfig, events: Emitter) {
     this.config = resolveConfig(config);
@@ -99,6 +110,7 @@ export class Widget {
     this.removeKeydown?.();
     this.removeResize?.();
     this.mobileQuery?.removeEventListener("change", this.onMobileChange);
+    this.unbindViewport();
     this.unlockScroll();
     this.destroyDom();
   }
@@ -381,6 +393,7 @@ export class Widget {
     const onResize = () => this.updateMobile();
     window.addEventListener("resize", onResize);
     this.removeResize = () => window.removeEventListener("resize", onResize);
+    this.bindViewport();
   }
 
   private onMobileChange = (): void => {
@@ -525,18 +538,99 @@ export class Widget {
     root.dataset.mobile = String(mobile);
     if (this.store.get().isOpen) this.lockScrollIfNeeded();
     else this.unlockScroll();
+    this.syncViewportHeight();
+  }
+
+  private isMobileOpen(): boolean {
+    return window.innerWidth <= this.config.mobileBreakpoint && this.store.get().isOpen;
   }
 
   private lockScrollIfNeeded(): void {
-    if (window.innerWidth <= this.config.mobileBreakpoint && this.store.get().isOpen) {
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.overflow = "hidden";
+    if (!this.isMobileOpen()) {
+      this.unlockScroll();
+      return;
     }
+    if (this.scrollLock) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    this.scrollLock = {
+      y: window.scrollY,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${this.scrollLock.y}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
   }
 
   private unlockScroll(): void {
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
+    this.clearViewportHeight();
+    const saved = this.scrollLock;
+    this.scrollLock = null;
+    if (!saved) return;
+
+    const html = document.documentElement;
+    const body = document.body;
+    html.style.overflow = saved.htmlOverflow;
+    body.style.overflow = saved.bodyOverflow;
+    body.style.position = saved.bodyPosition;
+    body.style.top = saved.bodyTop;
+    body.style.left = saved.bodyLeft;
+    body.style.right = saved.bodyRight;
+    body.style.width = saved.bodyWidth;
+    window.scrollTo(0, saved.y);
+  }
+
+  private bindViewport(): void {
+    this.unbindViewport();
+    const viewport = window.visualViewport;
+    const onChange = () => this.syncViewportHeight();
+    viewport?.addEventListener("resize", onChange);
+    viewport?.addEventListener("scroll", onChange);
+    this.removeViewport = () => {
+      viewport?.removeEventListener("resize", onChange);
+      viewport?.removeEventListener("scroll", onChange);
+    };
+  }
+
+  private unbindViewport(): void {
+    this.removeViewport?.();
+    this.removeViewport = undefined;
+  }
+
+  private syncViewportHeight(): void {
+    const panel = this.shadow?.querySelector<HTMLElement>(".rcw-panel");
+    if (!panel) return;
+    if (!this.isMobileOpen()) {
+      this.clearViewportHeight();
+      return;
+    }
+    const viewport = window.visualViewport;
+    const height = Math.round(viewport?.height ?? window.innerHeight);
+    const offsetTop = Math.round(viewport?.offsetTop ?? 0);
+    panel.style.top = `${offsetTop}px`;
+    panel.style.height = `${height}px`;
+    panel.style.maxHeight = `${height}px`;
+    panel.style.bottom = "auto";
+  }
+
+  private clearViewportHeight(): void {
+    const panel = this.shadow?.querySelector<HTMLElement>(".rcw-panel");
+    if (!panel) return;
+    panel.style.top = "";
+    panel.style.height = "";
+    panel.style.maxHeight = "";
+    panel.style.bottom = "";
   }
 
   private trapFocus(event: KeyboardEvent): void {
