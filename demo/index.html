@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retell Chat Widget Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Custom Retell Chat Widget</h1>
+      <p class="lede">
+        Einbettbares Text-Widget mit JS-Steuerung, Mobile-Fullscreen und persistenter Session.
+        Trage Public Key und Agent-ID ein, dann öffne den Chat per Button oder Script.
+      </p>
+      <nav>
+        <a href="./index.html">Demo</a>
+        <a href="./page-2.html">Seite 2 (Persistenz)</a>
+      </nav>
+
+      <section class="card">
+        <h2>Konfiguration</h2>
+        <div class="grid">
+          <div>
+            <label for="publicKey">Public Key (nicht der geheime API-Key)</label>
+            <input id="publicKey" autocomplete="off" placeholder="key_… oder public_key_…" />
+          </div>
+          <div>
+            <label for="agentId">Chat Agent ID</label>
+            <input id="agentId" autocomplete="off" placeholder="agent_..." />
+          </div>
+          <div>
+            <label for="title">Titel</label>
+            <input id="title" value="Hilfe &amp; Beratung" />
+          </div>
+          <div>
+            <label for="primary">Akzentfarbe</label>
+            <input id="primary" value="#1f4ed8" />
+          </div>
+          <div>
+            <label for="fabText">Button-Text</label>
+            <input id="fabText" value="Chat öffnen" />
+          </div>
+        </div>
+        <div class="actions">
+          <button id="apply" type="button">Widget starten</button>
+          <button id="destroy" class="secondary" type="button">Zerstören</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>JS-API</h2>
+        <div class="actions">
+          <button id="open" type="button">Öffnen</button>
+          <button id="openMessage" type="button">Öffnen + Nachricht</button>
+          <button id="openDraft" class="secondary" type="button">Öffnen + Draft</button>
+          <button id="close" class="secondary" type="button">Schließen</button>
+          <button id="reset" class="secondary" type="button">Reset</button>
+          <button type="button" data-retell-open data-retell-message="Hilfe zum Checkout">
+            Deklarativer Trigger
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Events</h2>
+        <div class="log" id="log">Warte auf Events…</div>
+      </section>
+    </main>
+
+    <script type="module" src="../src/index.ts"></script>
+    <script type="module">
+      const fields = ["publicKey", "agentId", "title", "primary", "fabText"];
+      const logEl = document.getElementById("log");
+
+      function load() {
+        for (const id of fields) {
+          const saved = localStorage.getItem(`rcw-demo-${id}`);
+          if (saved && document.getElementById(id)) document.getElementById(id).value = saved;
+        }
+      }
+
+      function save() {
+        for (const id of fields) {
+          localStorage.setItem(`rcw-demo-${id}`, document.getElementById(id).value);
+        }
+      }
+
+      function boot(auto = false) {
+        save();
+        const publicKey = document.getElementById("publicKey").value.trim();
+        const agentId = document.getElementById("agentId").value.trim();
+        if (!publicKey || !agentId) {
+          if (!auto) alert("Bitte Public Key und Agent-ID eintragen.");
+          return;
+        }
+        window.RetellChat.init({
+          publicKey,
+          agentId,
+          title: document.getElementById("title").value,
+          subtitle: "Wir antworten in der Regel sofort",
+          welcomeMessage: "Hallo! Wobei kann ich helfen?",
+          quickReplies: ["Termin vereinbaren", "Preise", "Technischer Support"],
+          colors: { primary: document.getElementById("primary").value },
+          botName: "Retell Demo",
+          fabText: document.getElementById("fabText").value,
+        });
+      }
+
+      load();
+      if (document.getElementById("publicKey").value && document.getElementById("agentId").value) {
+        boot(true);
+      }
+
+      document.getElementById("apply").onclick = () => boot(false);
+      document.getElementById("destroy").onclick = () => window.RetellChat.destroy();
+      document.getElementById("open").onclick = () => window.RetellChat.open();
+      document.getElementById("openMessage").onclick = () =>
+        window.RetellChat.open({
+          message: "Ich will einen Termin für Produkt X",
+          context: `Seite: ${location.pathname}`,
+        });
+      document.getElementById("openDraft").onclick = () =>
+        window.RetellChat.open({ draft: "Ich interessiere mich für…" });
+      document.getElementById("close").onclick = () => window.RetellChat.close();
+      document.getElementById("reset").onclick = () => window.RetellChat.reset();
+
+      const events = ["ready", "open", "close", "message", "error", "reset"];
+      for (const event of events) {
+        window.RetellChat.on(event, (payload) => {
+          const line = `[${event}] ${payload ? JSON.stringify(payload).slice(0, 180) : ""}`;
+          logEl.textContent = `${line}\n${logEl.textContent}`.slice(0, 2000);
+        });
+      }
+    </script>
+  </body>
+</html>

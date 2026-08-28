@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seite 2 — Widget-Persistenz</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Zweite Seite</h1>
+      <p class="lede">
+        Wenn du den Chat auf der ersten Seite geöffnet und geschrieben hast, sollte Verlauf und
+        Offen-Zustand hier erhalten bleiben.
+      </p>
+      <nav>
+        <a href="./index.html">Zurück zur Demo</a>
+      </nav>
+      <section class="card">
+        <p>
+          Diese Seite simuliert klassische Multi-Page-Navigation. Das Widget lädt neu, stellt den
+          State aber aus localStorage wieder her.
+        </p>
+        <a class="btn secondary" href="./index.html">Zurück</a>
+      </section>
+    </main>
+
+    <script type="module" src="../src/index.ts"></script>
+    <script type="module">
+      const publicKey = localStorage.getItem("rcw-demo-publicKey") || "";
+      const agentId = localStorage.getItem("rcw-demo-agentId") || "";
+      const title = localStorage.getItem("rcw-demo-title") || "Hilfe & Beratung";
+      const primary = localStorage.getItem("rcw-demo-primary") || "#1f4ed8";
+      if (publicKey && agentId) {
+        window.RetellChat.init({
+          publicKey,
+          agentId,
+          title,
+          subtitle: "Session bleibt über Navigation erhalten",
+          welcomeMessage: "Hallo! Wobei kann ich helfen?",
+          quickReplies: ["Termin vereinbaren", "Preise", "Technischer Support"],
+          colors: { primary },
+          botName: "Retell Demo",
+          fabText: localStorage.getItem("rcw-demo-fabText") || "Chat öffnen",
+        });
+      }
+    </script>
+  </body>
+</html>

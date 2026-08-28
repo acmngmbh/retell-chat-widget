@@ -1,0 +1,141 @@
+:root {
+  color-scheme: light;
+  --ink: #142033;
+  --muted: #5c6b80;
+  --line: #d8dfeb;
+  --bg: #f4f1ea;
+  --card: #fffdf8;
+  --accent: #1f4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  background:
+    radial-gradient(circle at 10% 0%, #fff8e8 0, transparent 36%),
+    radial-gradient(circle at 90% 20%, #dce8ff 0, transparent 32%),
+    var(--bg);
+  color: var(--ink);
+}
+
+body {
+  padding: 32px 20px 120px;
+}
+
+main {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+h1,
+h2 {
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1.05;
+  margin: 0 0 10px;
+}
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 38rem;
+}
+
+nav {
+  display: flex;
+  gap: 16px;
+  margin: 18px 0 28px;
+}
+
+nav a {
+  color: var(--accent);
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 20px;
+  margin: 18px 0;
+  box-shadow: 0 10px 30px rgba(32, 41, 58, 0.05);
+}
+
+label {
+  display: block;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+button,
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button.secondary,
+a.secondary {
+  background: #e8eefc;
+  color: var(--accent);
+}
+
+.log {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: #111827;
+  color: #d1d5db;
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 120px;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

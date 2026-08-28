@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embed — gebündelte JS-Datei</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Production Embed</h1>
+      <p class="lede">
+        Diese Seite lädt <code>dist/retell-chat-widget.js</code> — die Datei, die auf jeder Website
+        eingebaut wird. Zuerst <code>npm run build</code> ausführen.
+      </p>
+      <nav>
+        <a href="./index.html">Dev-Demo</a>
+        <a href="./page-2.html">Seite 2</a>
+      </nav>
+    </main>
+    <script src="/dist/retell-chat-widget.js"></script>
+    <script>
+      const publicKey = localStorage.getItem("rcw-demo-publicKey") || "";
+      const agentId = localStorage.getItem("rcw-demo-agentId") || "";
+      if (publicKey && agentId) {
+        RetellChat.init({
+          publicKey: publicKey,
+          agentId: agentId,
+          title: localStorage.getItem("rcw-demo-title") || "Hilfe",
+          colors: { primary: localStorage.getItem("rcw-demo-primary") || "#1f4ed8" },
+          welcomeMessage: "Hallo! Wobei kann ich helfen?",
+          fabText: localStorage.getItem("rcw-demo-fabText") || "Chat öffnen",
+        });
+      }
+    </script>
+  </body>
+</html>

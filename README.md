@@ -1,0 +1,133 @@
+# Retell Chat Widget
+
+Einbettbares Text-Chat-Widget für Retell Chat Agents. Eine JS-Datei, die du auf jeder Seite einbinden kannst.
+
+## 1. Vorbereiten
+
+1. Im [Retell-Dashboard](https://dashboard.retellai.com) einen **Chat Agent** anlegen.
+2. Unter **Keys → Public Keys** einen Public Key erzeugen (nicht den geheimen API-Key).
+3. Beim Public Key die Domain eintragen, z. B. `localhost` und später `deine-domain.de`.
+4. Widget bauen und die Datei hosten:
+
+```bash
+npm install
+npm run build
+```
+
+Die Datei `dist/retell-chat-widget.js` auf deinen Server, ein CDN oder ins CMS legen.
+
+## 2. Einbinden
+
+Script auf jeder Seite einfügen (am Ende von `<body>` oder in `<head>`):
+
+```html
+<script
+  src="https://deine-domain.de/retell-chat-widget.js"
+  data-public-key="DEIN_PUBLIC_KEY"
+  data-agent-id="DEINE_CHAT_AGENT_ID"
+  data-title="Hilfe"
+  data-fab-text="Chat öffnen"
+  data-welcome-message="Hallo! Wobei kann ich helfen?"
+></script>
+```
+
+Danach erscheint unten rechts der Button. Ein Klick öffnet den Chat.
+
+## 3. Button-Text und Design
+
+| Attribut | JS-Option | Bedeutung |
+| --- | --- | --- |
+| `data-fab-text` | `fabText` oder `buttonText` | Text auf dem runden Button. Default: `Chat öffnen`. Leer = nur Icon. |
+| `data-title` | `title` | Titel in der Chat-Leiste |
+| `data-subtitle` | `subtitle` | Untertitel |
+| `data-welcome-message` | `welcomeMessage` | Erste Bot-Nachricht |
+| `data-quick-replies` | `quickReplies` | Starter-Chips, getrennt mit `\|` |
+| `data-placeholder` | `placeholder` | Placeholder im Eingabefeld |
+| `data-color` | `colors.primary` | Akzentfarbe, z. B. `#1f4ed8` |
+| `data-position` | `position` | `bottom-right` (Default) oder `bottom-left` |
+| `data-hide-launcher` | `hideLauncher` | `true` = kein Button, nur per Script öffnen |
+
+Beispiel nur Icon, ohne Text:
+
+```html
+<script
+  src="/retell-chat-widget.js"
+  data-public-key="…"
+  data-agent-id="…"
+  data-fab-text=""
+></script>
+```
+
+## 4. Per JavaScript steuern
+
+```html
+<script src="/retell-chat-widget.js"></script>
+<script>
+  RetellChat.init({
+    publicKey: "DEIN_PUBLIC_KEY",
+    agentId: "DEINE_CHAT_AGENT_ID",
+    title: "Hilfe",
+    fabText: "Frage stellen",
+    welcomeMessage: "Hallo! Wobei kann ich helfen?",
+    colors: { primary: "#1f4ed8" },
+  });
+
+  // Chat öffnen
+  RetellChat.open();
+
+  // Öffnen und sofort eine Nachricht senden
+  RetellChat.open({ message: "Ich will einen Termin für Produkt X" });
+
+  // Öffnen und Text nur vorausfüllen
+  RetellChat.open({ draft: "Ich interessiere mich für…" });
+
+  // Unsichtbaren Seitenkontext mitgeben
+  RetellChat.open({
+    message: "Erzähl mir mehr dazu",
+    context: "Produkt: Premium-Tarif",
+    dynamicVariables: { product: "premium" },
+  });
+
+  RetellChat.close();
+  RetellChat.toggle();
+  RetellChat.reset(); // neues Gespräch
+</script>
+```
+
+### Buttons auf der Seite
+
+```html
+<button data-retell-open>Chat öffnen</button>
+<button data-retell-open data-retell-message="Hilfe zum Checkout">Checkout-Hilfe</button>
+<button data-retell-open data-retell-draft="Ich habe eine Frage zu…">Frage vorbereiten</button>
+```
+
+Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
+
+## 5. API-Kurzüberblick
+
+| Methode | Zweck |
+| --- | --- |
+| `RetellChat.init(config)` | Widget starten |
+| `RetellChat.open(options?)` | Öffnen, optional mit Text |
+| `RetellChat.close()` | Schließen |
+| `RetellChat.toggle()` | Umschalten |
+| `RetellChat.send(text)` | Nachricht senden |
+| `RetellChat.reset()` | Session löschen |
+| `RetellChat.destroy()` | Widget entfernen |
+| `RetellChat.on(event, fn)` | `ready`, `open`, `close`, `message`, `error`, `reset` |
+
+## Verhalten
+
+- **Navigation:** Verlauf und Offen-Zustand bleiben über Seitenwechsel erhalten (`localStorage`).
+- **Mobile:** Unter 640px öffnet der Chat fullscreen.
+- **reCAPTCHA:** Wenn am Public Key aktiv, Google-Script einbinden und `data-recaptcha-key` setzen.
+
+## Lokal testen
+
+```bash
+npm install
+npm run dev
+```
+
+Demo: [http://127.0.0.1:5173/demo/index.html](http://127.0.0.1:5173/demo/index.html)
