@@ -7,14 +7,7 @@ Einbettbares Text-Chat-Widget für Retell Chat Agents. Eine JS-Datei, die du auf
 1. Im [Retell-Dashboard](https://dashboard.retellai.com) einen **Chat Agent** anlegen.
 2. Unter **Keys → Public Keys** einen Public Key erzeugen (nicht den geheimen API-Key).
 3. Beim Public Key die Domain eintragen, z. B. `localhost` und später `deine-domain.de`.
-4. Widget bauen und die Datei hosten:
-
-```bash
-npm install
-npm run build
-```
-
-Die Datei `dist/retell-chat-widget.js` auf deinen Server, ein CDN oder ins CMS legen.
+Die gebaute Datei liegt im Repo unter `dist/retell-chat-widget.js` und wird über jsDelivr ausgeliefert.
 
 ## 2. Einbinden
 
@@ -22,7 +15,7 @@ Script auf jeder Seite einfügen (am Ende von `<body>` oder in `<head>`):
 
 ```html
 <script
-  src="https://deine-domain.de/retell-chat-widget.js"
+  src="https://cdn.jsdelivr.net/gh/acmngmbh/retell-chat-widget@main/dist/retell-chat-widget.js"
   data-public-key="DEIN_PUBLIC_KEY"
   data-agent-id="DEINE_CHAT_AGENT_ID"
   data-title="Hilfe"
@@ -51,7 +44,7 @@ Beispiel nur Icon, ohne Text:
 
 ```html
 <script
-  src="/retell-chat-widget.js"
+  src="https://cdn.jsdelivr.net/gh/acmngmbh/retell-chat-widget@main/dist/retell-chat-widget.js"
   data-public-key="…"
   data-agent-id="…"
   data-fab-text=""
@@ -61,7 +54,7 @@ Beispiel nur Icon, ohne Text:
 ## 4. Per JavaScript steuern
 
 ```html
-<script src="/retell-chat-widget.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/acmngmbh/retell-chat-widget@main/dist/retell-chat-widget.js"></script>
 <script>
   RetellChat.init({
     publicKey: "DEIN_PUBLIC_KEY",
