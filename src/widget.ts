@@ -294,7 +294,9 @@ export class Widget {
     this.updateFab();
     if (isOpen) {
       this.lockScrollIfNeeded();
-      queueMicrotask(() => this.focusComposer());
+      if (!this.isMobileLayout()) {
+        queueMicrotask(() => this.focusComposer());
+      }
       this.scrollToBottom();
     } else {
       this.unlockScroll();
@@ -633,16 +635,15 @@ export class Widget {
     }
     const viewport = window.visualViewport;
     const left = Math.round(viewport?.offsetLeft ?? 0);
-    const top = Math.round(viewport?.offsetTop ?? 0);
     const width = Math.round(viewport?.width ?? window.innerWidth);
-    const height = Math.round(viewport?.height ?? window.innerHeight);
+    const bottom = Math.round((viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight));
     panel.style.position = "fixed";
     panel.style.left = `${left}px`;
-    panel.style.top = `${top}px`;
+    panel.style.top = "0px";
     panel.style.width = `${width}px`;
-    panel.style.height = `${height}px`;
+    panel.style.height = `${bottom}px`;
     panel.style.maxWidth = "none";
-    panel.style.maxHeight = `${height}px`;
+    panel.style.maxHeight = `${bottom}px`;
     panel.style.right = "auto";
     panel.style.bottom = "auto";
   }
@@ -679,7 +680,7 @@ export class Widget {
   }
 
   private focusComposer(): void {
-    this.inputEl()?.focus();
+    this.inputEl()?.focus({ preventScroll: true });
   }
 
   private scrollToBottom(): void {
