@@ -87,6 +87,13 @@ Beispiel nur Icon, ohne Text:
     dynamicVariables: { product: "premium" },
   });
 
+  // Nur Variablen übergeben und den Agent zuerst sprechen lassen
+  // (Retell-Agent muss auf „AI speaks first“ stehen)
+  RetellChat.open({
+    start: true,
+    dynamicVariables: { plan: "premium" },
+  });
+
   RetellChat.close();
   RetellChat.toggle();
   RetellChat.reset(); // neues Gespräch
@@ -99,6 +106,13 @@ Beispiel nur Icon, ohne Text:
 <button data-retell-open>Chat öffnen</button>
 <button data-retell-open data-retell-message="Hilfe zum Checkout">Checkout-Hilfe</button>
 <button data-retell-open data-retell-draft="Ich habe eine Frage zu…">Frage vorbereiten</button>
+<button
+  data-retell-open
+  data-retell-start
+  data-retell-dynamic='{"plan":"premium"}'
+>
+  Premium-Hilfe
+</button>
 ```
 
 Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
@@ -108,7 +122,7 @@ Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
 | Methode | Zweck |
 | --- | --- |
 | `RetellChat.init(config)` | Widget starten |
-| `RetellChat.open(options?)` | Öffnen, optional mit Text |
+| `RetellChat.open(options?)` | Öffnen, optional mit Text, Variablen oder `start: true` |
 | `RetellChat.close()` | Schließen |
 | `RetellChat.toggle()` | Umschalten |
 | `RetellChat.send(text)` | Nachricht senden |
@@ -121,6 +135,7 @@ Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
 - **Navigation:** Verlauf und Offen-Zustand bleiben über Seitenwechsel erhalten (`localStorage`).
 - **Mobile:** Unter 640px öffnet der Chat fullscreen. Host-Seite muss `width=device-width` setzen.
 - **reCAPTCHA:** Wenn am Public Key aktiv, Google-Script einbinden und `data-recaptcha-key` setzen.
+- **AI speaks first:** `start: true` oder `data-retell-start` / `data-retell-dynamic` legt die Session an und holt die erste Agent-Nachricht. Läuft schon ein Gespräch, öffnet der Button nur den Chat. Für einen neuen Kontext vorher `RetellChat.reset()`.
 
 ## Lokal testen
 

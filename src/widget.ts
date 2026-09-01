@@ -3,7 +3,13 @@ import { resolveConfig } from "./config";
 import { Emitter } from "./events";
 import { renderMarkdown } from "./markdown";
 import { SessionStore } from "./store";
-import type { ChatMessage, OpenOptions, ResolvedConfig, WidgetConfig } from "./types";
+import type {
+  ChatCompletionResponse,
+  ChatMessage,
+  OpenOptions,
+  ResolvedConfig,
+  WidgetConfig,
+} from "./types";
 import { chatIcon, closeIcon, resetIcon, sendIcon } from "./ui/icons";
 import styles from "./styles.css?inline";
 
@@ -37,6 +43,33 @@ function focusables(root: ParentNode): HTMLElement[] {
     ).filter((el) => !el.hasAttribute("hidden") && el.getClientRects().length > 0);
 }
 
+function parseDynamicVars(value: string | null): Record<string, string> | undefined {
+  if (!value) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return undefined;
+    const out: Record<string, string> = {};
+    for (const [key, val] of Object.entries(parsed)) {
+      if (val == null) continue;
+      out[key] = String(val);
+    }
+    return Object.keys(out).length ? out : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function toAgentMessages(raw?: ChatCompletionResponse["messages"]): ChatMessage[] {
+  return (raw || [])
+    .filter((m) => m.role === "agent" && m.content)
+    .map((m) => ({
+      id: m.message_id || uid(),
+      role: "agent" as const,
+      content: m.content || "",
+      createdAt: m.created_timestamp || Date.now(),
+    }));
+}
+
 export class Widget {
   private config: ResolvedConfig;
   private store: SessionStore;
@@ -45,6 +78,7 @@ export class Widget {
   private shadow: ShadowRoot | null = null;
   private sending = false;
   private lastFailedText: string | null = null;
+  private lastStartFailed = false;
   private lastErrorDetail: string | null = null;
   private pendingContext = "";
   private mobileQuery: MediaQueryList | null = null;
@@ -137,6 +171,8 @@ export class Widget {
     this.syncOpen(true);
     if (options.message) {
       void this.send(options.message);
+    } else if (options.start) {
+      void this.startAgentTurn();
     }
   }
 
@@ -164,6 +200,7 @@ export class Widget {
       draft: "",
     });
     this.lastFailedText = null;
+    this.lastStartFailed = false;
     this.lastErrorDetail = null;
     this.sending = true;
     this.renderMessages();
@@ -183,14 +220,7 @@ export class Widget {
         chatId = await this.ensureChat();
         completion = await this.client.createChatCompletion(chatId, apiContent);
       }
-      const agentMessages = (completion.messages || [])
-        .filter((m) => m.role === "agent" && m.content)
-        .map((m) => ({
-          id: m.message_id || uid(),
-          role: "agent" as const,
-          content: m.content || "",
-          createdAt: m.created_timestamp || Date.now(),
-        }));
+      const agentMessages = toAgentMessages(completion.messages);
 
       if (agentMessages.length) {
         const unread = this.store.get().isOpen ? 0 : this.store.get().unreadCount + agentMessages.length;
@@ -225,6 +255,7 @@ export class Widget {
     this.store.reset(true);
     this.pendingContext = "";
     this.lastFailedText = null;
+    this.lastStartFailed = false;
     this.lastErrorDetail = null;
     this.renderMessages();
     this.updateComposer();
@@ -242,6 +273,70 @@ export class Widget {
     });
     this.store.patch({ chatId: created.chat_id });
     return created.chat_id;
+  }
+
+  private async startAgentTurn(): Promise<void> {
+    const session = this.store.get();
+    if (this.sending || session.chatId || session.messages.some((m) => m.role === "agent")) {
+      return;
+    }
+
+    this.lastFailedText = null;
+    this.lastStartFailed = false;
+    this.lastErrorDetail = null;
+    this.sending = true;
+    this.renderMessages();
+    this.updateComposer();
+
+    try {
+      const created = await this.client.createChat({
+        agentId: this.config.agentId,
+        agentVersion: this.config.agentVersion,
+        dynamicVariables: this.store.get().dynamicVariables,
+      });
+      this.store.patch({ chatId: created.chat_id });
+
+      let agentMessages = toAgentMessages(created.message_with_tool_calls);
+      if (!agentMessages.length) {
+        try {
+          const chat = await this.client.getChat(created.chat_id);
+          agentMessages = toAgentMessages(chat.message_with_tool_calls);
+        } catch {
+          // Public keys may not allow get-chat.
+        }
+      }
+      if (!agentMessages.length) {
+        try {
+          const completion = await this.client.createChatCompletion(created.chat_id, "");
+          agentMessages = toAgentMessages(completion.messages);
+        } catch (error) {
+          console.error("[RetellChat] agent start completion failed", error);
+        }
+      }
+
+      if (agentMessages.length) {
+        const unread = this.store.get().isOpen ? 0 : this.store.get().unreadCount + agentMessages.length;
+        this.store.patch({
+          messages: [...this.store.get().messages, ...agentMessages],
+          unreadCount: unread,
+        });
+        for (const message of agentMessages) {
+          this.events.emit("message", message);
+        }
+      }
+    } catch (error) {
+      console.error("[RetellChat] agent start failed", error);
+      this.lastStartFailed = true;
+      this.lastErrorDetail = formatRetellError(error);
+      this.events.emit("error", {
+        message: this.lastErrorDetail,
+        status: error instanceof RetellApiError ? error.status : 0,
+      });
+    } finally {
+      this.sending = false;
+      this.renderMessages();
+      this.updateComposer();
+    }
   }
 
   private consumeContext(content: string): string {
@@ -360,6 +455,9 @@ export class Widget {
       this.autosize();
       this.updateComposer();
     });
+    this.inputEl()?.addEventListener("focus", () => {
+      this.syncViewportBox();
+    });
     this.inputEl()?.addEventListener("keydown", (event) => {
       if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
@@ -374,7 +472,10 @@ export class Widget {
       const message = target.getAttribute("data-retell-message") || undefined;
       const draft = target.getAttribute("data-retell-draft") || undefined;
       const context = target.getAttribute("data-retell-context") || undefined;
-      this.open({ message, draft, context });
+      const dynamicVariables = parseDynamicVars(target.getAttribute("data-retell-dynamic"));
+      const start =
+        target.hasAttribute("data-retell-start") || Boolean(dynamicVariables && !message);
+      this.open({ message, draft, context, dynamicVariables, start });
     };
     document.addEventListener("click", onDocClick);
     this.removeTrigger = () => document.removeEventListener("click", onDocClick);
@@ -450,7 +551,7 @@ export class Widget {
       `);
     }
 
-    if (this.lastFailedText) {
+    if (this.lastFailedText || this.lastStartFailed) {
       nodes.push(`
         <div class="rcw-error">
           <span>${this.esc(this.lastErrorDetail || this.config.strings.error)}</span>
@@ -461,7 +562,8 @@ export class Widget {
 
     list.innerHTML = nodes.join("");
     list.querySelector(".rcw-retry")?.addEventListener("click", () => {
-      if (this.lastFailedText) void this.send(this.lastFailedText);
+      if (this.lastStartFailed) void this.startAgentTurn();
+      else if (this.lastFailedText) void this.send(this.lastFailedText);
     });
 
     const quick = this.shadow?.querySelector<HTMLElement>(".rcw-quick");
@@ -635,17 +737,19 @@ export class Widget {
     }
     const viewport = window.visualViewport;
     const left = Math.round(viewport?.offsetLeft ?? 0);
+    const top = Math.round(viewport?.offsetTop ?? 0);
     const width = Math.round(viewport?.width ?? window.innerWidth);
-    const bottom = Math.round((viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight));
+    const height = Math.round(viewport?.height ?? window.innerHeight);
     panel.style.position = "fixed";
     panel.style.left = `${left}px`;
-    panel.style.top = "0px";
+    panel.style.top = `${top}px`;
     panel.style.width = `${width}px`;
-    panel.style.height = `${bottom}px`;
+    panel.style.height = `${height}px`;
     panel.style.maxWidth = "none";
-    panel.style.maxHeight = `${bottom}px`;
+    panel.style.maxHeight = `${height}px`;
     panel.style.right = "auto";
     panel.style.bottom = "auto";
+    this.scrollToBottom();
   }
 
   private clearViewportBox(): void {

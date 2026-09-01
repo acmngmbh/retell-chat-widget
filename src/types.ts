@@ -100,6 +100,7 @@ export interface OpenOptions {
   message?: string;
   dynamicVariables?: Record<string, string>;
   context?: string;
+  start?: boolean;
 }
 
 export interface ChatMessage {
@@ -137,6 +138,7 @@ export interface CreateChatResponse {
   chat_id: string;
   agent_id: string;
   chat_status: "ongoing" | "ended" | "error";
+  message_with_tool_calls?: ChatCompletionResponse["messages"];
 }
 
 export interface ChatCompletionResponse {
