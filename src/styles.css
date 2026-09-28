@@ -200,6 +200,13 @@
   object-fit: cover;
 }
 
+.rcw-avatar svg,
+.rcw-msg-avatar svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .rcw-titles {
   min-width: 0;
 }

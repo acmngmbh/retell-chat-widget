@@ -10,22 +10,13 @@ import type {
   ResolvedConfig,
   WidgetConfig,
 } from "./types";
-import { chatIcon, closeIcon, resetIcon, sendIcon } from "./ui/icons";
+import { chatIcon, closeIcon, resetIcon, sendIcon, sparkleIcon } from "./ui/icons";
 import styles from "./styles.css?inline";
 
 const HOST_ID = "retell-chat-widget-host";
 
 function uid(): string {
   return `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
 }
 
 function resolveTheme(theme: ResolvedConfig["theme"]): "light" | "dark" {
@@ -815,7 +806,7 @@ export class Widget {
     if (this.config.botAvatarUrl) {
       return `<img src="${this.esc(this.config.botAvatarUrl)}" alt="" />`;
     }
-    return this.esc(initials(this.config.botName) || "AI");
+    return sparkleIcon;
   }
 
   private fabIconHtml(): string {
