@@ -66,6 +66,16 @@ function numAttr(value: string | null | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function stringVars(value: unknown): Record<string, string> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [key, val] of Object.entries(value)) {
+    if (val == null) continue;
+    out[key] = String(val);
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
 function normalizeQuickReplies(input?: QuickReplyInput[]): QuickReply[] {
   if (!input) return [];
   const out: QuickReply[] = [];
@@ -79,7 +89,8 @@ function normalizeQuickReplies(input?: QuickReplyInput[]): QuickReply[] {
     const label = String(item.label || "").trim();
     const message = String(item.message || "").trim();
     if (!label || !message) continue;
-    out.push({ label, message });
+    const dynamicVariables = stringVars(item.dynamicVariables);
+    out.push(dynamicVariables ? { label, message, dynamicVariables } : { label, message });
   }
   return out;
 }

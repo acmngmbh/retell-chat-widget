@@ -579,7 +579,16 @@ export class Widget {
     list.querySelectorAll<HTMLButtonElement>("[data-suggestion]").forEach((chip) => {
       chip.addEventListener("click", () => {
         const reply = this.config.quickReplies[Number(chip.dataset.suggestion)];
-        if (reply) void this.send(reply.message);
+        if (!reply) return;
+        if (reply.dynamicVariables) {
+          this.store.patch({
+            dynamicVariables: {
+              ...this.store.get().dynamicVariables,
+              ...reply.dynamicVariables,
+            },
+          });
+        }
+        void this.send(reply.message);
       });
     });
 

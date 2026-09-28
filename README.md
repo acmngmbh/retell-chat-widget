@@ -41,7 +41,7 @@ Die Einbindeseite braucht ein Viewport-Meta, sonst rechnet iOS mit ~980px Breite
 | `data-subtitle` | `subtitle` | Untertitel |
 | `data-welcome-message` | `welcomeMessage` | Erste Bot-Nachricht, solange keine Vorschläge gesetzt sind |
 | `data-empty-text` | `emptyText` | Text in der Mitte des leeren Chats |
-| `data-quick-replies` | `quickReplies` | Vorschlags-Buttons. Strings mit `\|`, oder JSON mit `{ "label", "message" }` |
+| `data-quick-replies` | `quickReplies` | Vorschlags-Buttons. Strings mit `\|`, oder JSON mit `{ "label", "message", "dynamicVariables" }` |
 | `data-placeholder` | `placeholder` | Placeholder im Eingabefeld |
 | `data-color` | `colors.primary` | Akzentfarbe, z. B. `#1f4ed8` |
 | `data-position` | `position` | `bottom-right` (Default) oder `bottom-left` |
@@ -70,7 +70,11 @@ Beispiel nur Icon, ohne Text:
     fabText: "Frage stellen",
     emptyText: "Wobei kann ich helfen?",
     quickReplies: [
-      { label: "Termin", message: "Ich möchte einen Termin vereinbaren." },
+      {
+        label: "Termin",
+        message: "Ich möchte einen Termin vereinbaren.",
+        dynamicVariables: { topic: "appointment" },
+      },
       "Preise",
     ],
     colors: { primary: "#1f4ed8" },
@@ -141,7 +145,7 @@ Deep-Link: `https://deine-seite.de/?retell=open&retell_q=Termin%20buchen`
 - **Mobile:** Unter 640px öffnet der Chat fullscreen. Host-Seite muss `width=device-width` setzen.
 - **reCAPTCHA:** Wenn am Public Key aktiv, Google-Script einbinden und `data-recaptcha-key` setzen.
 - **AI speaks first:** `start: true` oder `data-retell-start` / `data-retell-dynamic` legt die Session an und holt die erste Agent-Nachricht. Läuft schon ein Gespräch, öffnet der Button nur den Chat. Für einen neuen Kontext vorher `RetellChat.reset()`.
-- **Leerer Chat:** `emptyText` steht in der Mitte. `quickReplies` sind Buttons darunter. Ein Klick sendet `message` (bei einem String den Button-Text) als erste User-Nachricht. Danach verschwinden Text und Buttons.
+- **Leerer Chat:** `emptyText` steht in der Mitte. `quickReplies` sind Buttons darunter. Ein Klick sendet `message` (bei einem String den Button-Text) als erste User-Nachricht. `dynamicVariables` am Button werden mit denen aus `init` gemischt und gehen in denselben Create-Chat; gleiche Keys überschreibt der Button. Danach verschwinden Text und Buttons. Läuft schon eine Session, nimmt Retell keine neuen Variablen mehr an — vorher `RetellChat.reset()`.
 
 ## Lokal testen
 

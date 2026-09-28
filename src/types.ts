@@ -17,9 +17,12 @@ export interface WidgetStrings {
 export interface QuickReply {
   label: string;
   message: string;
+  dynamicVariables?: Record<string, string>;
 }
 
-export type QuickReplyInput = string | { label: string; message: string };
+export type QuickReplyInput =
+  | string
+  | { label: string; message: string; dynamicVariables?: Record<string, unknown> };
 
 export interface WidgetColors {
   primary?: string;
