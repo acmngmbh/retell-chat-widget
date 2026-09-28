@@ -426,7 +426,6 @@ export class Widget {
             </div>
           </header>
           <div class="rcw-messages" role="log" aria-live="polite"></div>
-          <div class="rcw-quick" hidden></div>
           <form class="rcw-composer">
             <label class="rcw-sr-only" for="rcw-input">${this.esc(strings.placeholder)}</label>
             <textarea id="rcw-input" class="rcw-input" rows="1" placeholder="${this.esc(strings.placeholder)}"></textarea>
@@ -520,7 +519,28 @@ export class Widget {
     const session = this.store.get();
     const nodes: string[] = [];
 
-    if (!session.messages.length && this.config.welcomeMessage) {
+    const suggestions = this.config.quickReplies;
+    const showSuggestions = !session.messages.length && !this.sending && suggestions.length > 0;
+    const emptyCopy = this.config.emptyText || (showSuggestions ? this.config.welcomeMessage : "");
+    if (showSuggestions || (!session.messages.length && this.config.emptyText)) {
+      nodes.push(`
+        <div class="rcw-empty">
+          ${emptyCopy ? `<p class="rcw-empty-text">${this.esc(emptyCopy)}</p>` : ""}
+          ${
+            showSuggestions
+              ? `<div class="rcw-suggestions">
+            ${suggestions
+              .map(
+                (reply, index) =>
+                  `<button type="button" class="rcw-chip" data-suggestion="${index}">${this.esc(reply.label)}</button>`,
+              )
+              .join("")}
+          </div>`
+              : ""
+          }
+        </div>
+      `);
+    } else if (!session.messages.length && this.config.welcomeMessage) {
       nodes.push(this.messageRow({
         id: "welcome",
         role: "agent",
@@ -528,7 +548,7 @@ export class Widget {
         createdAt: 0,
       }));
     } else if (!session.messages.length) {
-      nodes.push(`<div class="rcw-empty">${this.esc(this.config.welcomeMessage || this.config.subtitle || this.config.title)}</div>`);
+      nodes.push(`<div class="rcw-empty">${this.esc(this.config.subtitle || this.config.title)}</div>`);
     }
 
     for (const message of session.messages) {
@@ -565,20 +585,12 @@ export class Widget {
       if (this.lastStartFailed) void this.startAgentTurn();
       else if (this.lastFailedText) void this.send(this.lastFailedText);
     });
-
-    const quick = this.shadow?.querySelector<HTMLElement>(".rcw-quick");
-    if (quick) {
-      const showQuick = this.config.quickReplies.length > 0 && session.messages.length === 0 && !this.sending;
-      quick.hidden = !showQuick;
-      quick.innerHTML = showQuick
-        ? this.config.quickReplies
-            .map((reply) => `<button type="button" class="rcw-chip">${this.esc(reply)}</button>`)
-            .join("")
-        : "";
-      quick.querySelectorAll<HTMLButtonElement>(".rcw-chip").forEach((chip) => {
-        chip.addEventListener("click", () => void this.send(chip.textContent || ""));
+    list.querySelectorAll<HTMLButtonElement>("[data-suggestion]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const reply = this.config.quickReplies[Number(chip.dataset.suggestion)];
+        if (reply) void this.send(reply.message);
       });
-    }
+    });
 
     this.updateFab();
     this.scrollToBottom();

@@ -270,10 +270,26 @@
 
 .rcw-empty {
   margin: auto;
+  width: 100%;
+  max-width: 280px;
   text-align: center;
   color: var(--rcw-muted);
   font-size: 14px;
-  max-width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.rcw-empty-text {
+  margin: 0;
+}
+
+.rcw-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
 .rcw-row {
@@ -396,15 +412,6 @@
   cursor: pointer;
   font: inherit;
   font-weight: 600;
-}
-
-.rcw-quick {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 16px 10px;
-  flex-shrink: 0;
-  min-width: 0;
 }
 
 .rcw-chip {

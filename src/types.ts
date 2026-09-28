@@ -14,6 +14,13 @@ export interface WidgetStrings {
   conversationEnded: string;
 }
 
+export interface QuickReply {
+  label: string;
+  message: string;
+}
+
+export type QuickReplyInput = string | { label: string; message: string };
+
 export interface WidgetColors {
   primary?: string;
   background?: string;
@@ -40,7 +47,8 @@ export interface WidgetConfig {
   fabIcon?: string;
   hideLauncher?: boolean;
   welcomeMessage?: string;
-  quickReplies?: string[];
+  emptyText?: string;
+  quickReplies?: QuickReplyInput[];
   placeholder?: string;
   position?: Position;
   offsetX?: number;
@@ -75,7 +83,8 @@ export interface ResolvedConfig {
   fabIcon: string;
   hideLauncher: boolean;
   welcomeMessage: string;
-  quickReplies: string[];
+  emptyText: string;
+  quickReplies: QuickReply[];
   position: Position;
   offsetX: number;
   offsetY: number;

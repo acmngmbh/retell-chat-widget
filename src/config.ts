@@ -1,5 +1,5 @@
 import { defaultStrings } from "./i18n";
-import type { ResolvedConfig, Theme, WidgetConfig, WidgetStrings } from "./types";
+import type { QuickReply, QuickReplyInput, ResolvedConfig, Theme, WidgetConfig, WidgetStrings } from "./types";
 
 const DEFAULT_API_BASE = "https://api.retellai.com";
 
@@ -28,7 +28,8 @@ export function resolveConfig(config: WidgetConfig): ResolvedConfig {
     fabIcon: config.fabIcon || "",
     hideLauncher: Boolean(config.hideLauncher),
     welcomeMessage: config.welcomeMessage || "",
-    quickReplies: config.quickReplies || [],
+    emptyText: config.emptyText || "",
+    quickReplies: normalizeQuickReplies(config.quickReplies),
     position: config.position === "bottom-left" ? "bottom-left" : "bottom-right",
     offsetX: config.offsetX ?? 20,
     offsetY: config.offsetY ?? 20,
@@ -65,6 +66,31 @@ function numAttr(value: string | null | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function normalizeQuickReplies(input?: QuickReplyInput[]): QuickReply[] {
+  if (!input) return [];
+  const out: QuickReply[] = [];
+  for (const item of input) {
+    if (typeof item === "string") {
+      const text = item.trim();
+      if (text) out.push({ label: text, message: text });
+      continue;
+    }
+    if (!item || typeof item !== "object") continue;
+    const label = String(item.label || "").trim();
+    const message = String(item.message || "").trim();
+    if (!label || !message) continue;
+    out.push({ label, message });
+  }
+  return out;
+}
+
+function quickRepliesFromAttr(value: string | undefined): QuickReplyInput[] | undefined {
+  if (!value) return undefined;
+  const parsed = jsonAttr<unknown>(value);
+  if (Array.isArray(parsed)) return parsed as QuickReplyInput[];
+  return value.split("|").map((part) => part.trim()).filter(Boolean);
+}
+
 function jsonAttr<T>(value: string | null | undefined): T | undefined {
   if (!value) return undefined;
   try {
@@ -80,12 +106,7 @@ export function configFromScript(script: HTMLScriptElement): WidgetConfig | null
   const agentId = dataset.agentId || "";
   if (!publicKey || !agentId) return null;
 
-  const quickRepliesJson = jsonAttr<string[]>(dataset.quickReplies);
-  const quickReplies =
-    quickRepliesJson ||
-    (dataset.quickReplies
-      ? dataset.quickReplies.split("|").map((s) => s.trim()).filter(Boolean)
-      : undefined);
+  const quickReplies = quickRepliesFromAttr(dataset.quickReplies);
 
   const primary = dataset.color || dataset.primary || dataset.componentColor;
   const background = dataset.themeColor || dataset.background;
@@ -104,6 +125,7 @@ export function configFromScript(script: HTMLScriptElement): WidgetConfig | null
     fabIcon: dataset.fabIcon,
     hideLauncher: boolAttr(dataset.hideLauncher ?? null),
     welcomeMessage: dataset.welcomeMessage,
+    emptyText: dataset.emptyText,
     quickReplies,
     placeholder: dataset.placeholder,
     position: dataset.position === "bottom-left" ? "bottom-left" : "bottom-right",
